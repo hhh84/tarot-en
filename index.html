@@ -145,10 +145,11 @@ h3 { color: var(--gold-light); font-size: 16px; margin: 16px 0 8px; }
   .card-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
 }
 </style>
-<!-- 仅保留这1个 Social Bar 广告脚本，无冲突 -->
-<script src="https://pl29521707.effectivecpmnetwork.com/93/1f/1f/931f1fb4f2bff27d53e6976492cf38c7.js"></script>
+<!-- 单个Social Bar广告，添加async异步加载，避免页面阻塞 -->
+<script async src="https://pl29521707.effectivecpmnetwork.com/93/1f/1f/931f1fb4f2bff27d53e6976492cf38c7.js"></script>
 </head>
 <body>
+<!-- 下方原有页面代码完全不变 -->
 <!-- Navigation -->
 <nav>
   <div class="nav-logo">Tarot Oracle &middot; Daily Divination</div>
