@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tarot Oracle · Daily Divination</title>
+<style>
+:root {
+  --deep-purple: #1a0a2e; --mid-purple: #2d1b5e; --light-purple: #4a2d8a;
+  --dark-blue: #0d1b3e; --mid-blue: #1e2d5a;
+  --gold: #c9a84c; --gold-light: #e8c97a; --gold-dim: #8a6f32;
+  --text-primary: #f0e8d8; --text-secondary: #c8b89a; --text-muted: #8a7a6a;
+  --card-bg: rgba(45,27,94,0.55); --card-border: rgba(201,168,76,0.3);
+  --radius: 12px; --radius-sm: 8px; --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: linear-gradient(135deg, #0a0618 0%, #12082a 40%, #0d1535 70%, #080c20 100%);
+  min-height: 100vh;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10,6,24,0.92); backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+  padding: 0 24px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { font-family: Georgia, serif; font-size: 18px; color: var(--gold); letter-spacing: 2px; }
+.nav-links { display: flex; gap: 8px; }
+.nav-link {
+  background: none; border: 1px solid transparent; color: var(--text-secondary);
+  padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 14px;
+  transition: all 0.3s;
+}
+.nav-link:hover, .nav-link.active { color: var(--gold); border-color: var(--gold-dim); background: rgba(201,168,76,0.1); }
+.page { display: none; padding: 80px 24px 40px; max-width: 900px; margin: 0 auto; }
+.page.active { display: block; }
+h2 { color: var(--gold); font-size: 22px; margin-bottom: 20px; text-align: center; }
+h3 { color: var(--gold-light); font-size: 16px; margin: 16px 0 8px; }
+.btn {
+  background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+  color: #1a0a2e; border: none; padding: 10px 28px; border-radius: 24px;
+  font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(201,168,76,0.4); }
+.btn-secondary {
+  background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid var(--gold-dim);
+  padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.3s;
+}
+.btn-secondary:hover { background: rgba(201,168,76,0.25); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin: 16px 0; }
+.card-item {
+  background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+  padding: 10px 8px; text-align: center; cursor: pointer; transition: all 0.3s; font-size: 12px;
+}
+.card-item:hover { transform: translateY(-4px); border-color: var(--gold); box-shadow: 0 4px 16px rgba(201,168,76,0.2); }
+.card-item .emoji { font-size: 28px; display: block; margin-bottom: 4px; }
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); z-index: 200; justify-content: center; align-items: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--deep-purple); border: 1px solid var(--gold-dim); border-radius: var(--radius);
+  padding: 32px; max-width: 520px; width: 90%; max-height: 80vh; overflow-y: auto; position: relative;
+}
+.modal-close {
+  position: absolute; top: 12px; right: 16px; background: none; border: none;
+  color: var(--text-muted); font-size: 24px; cursor: pointer;
+}
+.modal-close:hover { color: var(--gold); }
+.spread-options { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.spread-option {
+  flex: 1; min-width: 120px; background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm); padding: 16px 12px; text-align: center; cursor: pointer; transition: all 0.3s;
+}
+.spread-option:hover, .spread-option.active { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+.spread-option .name { color: var(--gold-light); font-size: 14px; font-weight: 600; }
+.spread-option .desc { color: var(--text-muted); font-size: 12px; margin-top: 4px; }
+.theme-options { display: flex; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
+.theme-option {
+  width: 80px; height: 80px; border-radius: 50%; border: 3px solid transparent;
+  cursor: pointer; transition: all 0.3s; position: relative;
+}
+.theme-option:hover, .theme-option.active { border-color: var(--gold); transform: scale(1.1); }
+.faq-item { margin: 12px 0; background: var(--card-bg); border-radius: var(--radius-sm); overflow: hidden; }
+.faq-q {
+  padding: 14px 18px; cursor: pointer; color: var(--gold-light); font-size: 15px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.faq-q:hover { background: rgba(201,168,76,0.08); }
+.faq-a { padding: 0 18px 14px; color: var(--text-secondary); font-size: 14px; line-height: 1.7; display: none; }
+.faq-item.open .faq-a { display: block; }
+.record-item {
+  background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+  padding: 16px; margin: 12px 0;
+}
+.record-date { color: var(--text-muted); font-size: 12px; }
+.record-spread { color: var(--gold-dim); font-size: 13px; margin: 4px 0; }
+.record-cards { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.result-card {
+  background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+  padding: 12px; text-align: center; min-width: 90px;
+}
+.result-card .emoji { font-size: 32px; }
+.result-card .name { color: var(--gold-light); font-size: 13px; margin: 4px 0; }
+.result-card .dir { color: var(--text-muted); font-size: 11px; }
+#draw-area { text-align: center; margin: 30px 0; }
+#card-display { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin: 20px 0; }
+#card-display .deck-card {
+  width: 100px; height: 160px; background: linear-gradient(135deg, var(--mid-purple), var(--light-purple));
+  border: 2px solid var(--gold-dim); border-radius: 10px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: pointer; transition: all 0.4s; font-size: 12px;
+}
+#card-display .deck-card:hover { transform: translateY(-8px); box-shadow: 0 8px 24px rgba(201,168,76,0.3); }
+#card-display .deck-card.revealed { background: var(--card-bg); }
+.tutorial-tabs { display: flex; gap: 8px; margin: 20px 0; flex-wrap: wrap; }
+.tutorial-tab {
+  padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 14px;
+  background: rgba(201,168,76,0.1); color: var(--text-secondary); border: 1px solid transparent; transition: all 0.3s;
+}
+.tutorial-tab:hover, .tutorial-tab.active { color: var(--gold); border-color: var(--gold-dim); }
+.tutorial-content { color: var(--text-secondary); font-size: 14px; line-height: 1.8; }
+.lib-search {
+  width: 100%; max-width: 400px; padding: 10px 16px; border-radius: 20px;
+  background: rgba(45,27,94,0.5); border: 1px solid var(--gold-dim);
+  color: var(--text-primary); font-size: 14px; margin: 16px auto; display: block;
+}
+.lib-search::placeholder { color: var(--text-muted); }
+.lib-search:focus { outline: none; border-color: var(--gold); }
+.lib-filter { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; justify-content: center; }
+.lib-filter-btn {
+  padding: 6px 14px; border-radius: 16px; cursor: pointer; font-size: 13px;
+  background: rgba(201,168,76,0.08); color: var(--text-secondary); border: 1px solid transparent; transition: all 0.3s;
+}
+.lib-filter-btn:hover, .lib-filter-btn.active { color: var(--gold); border-color: var(--gold-dim); }
+.empty-msg { text-align: center; color: var(--text-muted); margin: 40px 0; font-size: 15px; }
+@media (max-width: 600px) {
+  .nav-links { gap: 4px; }
+  .nav-link { padding: 5px 10px; font-size: 12px; }
+  .page { padding: 70px 12px 30px; }
+  .card-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+}
+</style>
+</head>
+<body>
+<!-- Navigation -->
+<nav>
+  <div class="nav-logo">Tarot Oracle &middot; Daily Divination</div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="showPage('divination', this)">Divination</button>
+    <button class="nav-link" onclick="showPage('library', this)">Card Library</button>
+    <button class="nav-link" onclick="showPage('tutorial', this)">Beginner Guide</button>
+    <button class="nav-link" onclick="showPage('faq', this)">FAQ</button>
+    <button class="nav-link" onclick="showPage('records', this)">My Records</button>
+  </div>
+</nav>
+
+<!-- Divination Page -->
+<div id="page-divination" class="page active">
+  <h2>Daily Divination</h2>
+  <p style="text-align:center;color:var(--text-secondary);margin-bottom:20px;">Hold your question in mind, choose a spread, and draw your cards.</p>
+  <div class="spread-options">
+    <div class="spread-option active" onclick="selectSpread('single', this)">
+      <div style="font-size:28px;">&#x1F0CF;</div>
+      <div class="name">Single Card</div>
+      <div class="desc">One card guidance</div>
+    </div>
+    <div class="spread-option" onclick="selectSpread('three', this)">
+      <div style="font-size:28px;">&#x1F0CF;&#x1F0CF;&#x1F0CF;</div>
+      <div class="name">Three Card</div>
+      <div class="desc">Past &middot; Present &middot; Future</div>
+    </div>
+    <div class="spread-option" onclick="selectSpread('five', this)">
+      <div style="font-size:28px;">&#x1F0CF;x5</div>
+      <div class="name">Five Card</div>
+      <div class="desc">Full perspective</div>
+    </div>
+    <div class="spread-option" onclick="selectSpread('celtic', this)">
+      <div style="font-size:28px;">&#x2606;</div>
+      <div class="name">Celtic Cross</div>
+      <div class="desc">Deep reading</div>
+    </div>
+  </div>
+  <div id="draw-area">
+    <button class="btn" onclick="drawCards()">Draw Cards</button>
+  </div>
+  <div id="card-display"></div>
+  <div id="result-actions" style="display:none;text-align:center;gap:12px;margin:20px 0;">
+    <button class="btn-secondary" onclick="saveRecord()">Save Record</button>
+    <button class="btn-secondary" onclick="shareResult()">Share Result</button>
+    <button class="btn-secondary" onclick="resetDraw()">Draw Again</button>
+  </div>
+</div>
+
+<!-- Card Library Page -->
+<div id="page-library" class="page">
+  <h2>Card Library</h2>
+  <input class="lib-search" placeholder="Search card name or keyword..." oninput="filterCards(this.value)">
+  <div class="lib-filter">
+    <button class="lib-filter-btn active" data-suit="all" onclick="filterBySuit('all')">All</button>
+    <button class="lib-filter-btn" data-suit="major" onclick="filterBySuit('major')">Major Arcana</button>
+    <button class="lib-filter-btn" data-suit="wands" onclick="filterBySuit('wands')">Wands</button>
+    <button class="lib-filter-btn" data-suit="cups" onclick="filterBySuit('cups')">Cups</button>
+    <button class="lib-filter-btn" data-suit="swords" onclick="filterBySuit('swords')">Swords</button>
+    <button class="lib-filter-btn" data-suit="pentacles" onclick="filterBySuit('pentacles')">Pentacles</button>
+  </div>
+  <div id="library-grid" class="card-grid"></div>
+</div>
+
+<!-- Beginner Guide Page -->
+<div id="page-tutorial" class="page">
+  <h2>Beginner Guide</h2>
+  <div class="tutorial-tabs">
+    <button class="tutorial-tab active" onclick="showTutorial(0)">What is Tarot?</button>
+    <button class="tutorial-tab" onclick="showTutorial(1)">How to Read?</button>
+    <button class="tutorial-tab" onclick="showTutorial(2)">Card Interpretation</button>
+    <button class="tutorial-tab" onclick="showTutorial(3)">Upright &amp; Reversed</button>
+  </div>
+  <div id="tutorial-content" class="tutorial-content" style="margin-top:20px;"></div>
+</div>
+
+<!-- FAQ Page -->
+<div id="page-faq" class="page">
+  <h2>Frequently Asked Questions</h2>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Is tarot accurate?<span>&#x25BC;</span></div>
+    <div class="faq-a">Tarot is a psychological tool that helps you view your situation from different angles. The result depends on your own intuition and judgment &mdash; it is not an absolute prophecy. Think of it as a mirror reflecting your inner thoughts and feelings.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">How many times can I read per day?<span>&#x25BC;</span></div>
+    <div class="faq-a">It is generally advised not to repeat a reading for the same question. If you feel calm and want to try again later, that is fine. There is no strict daily limit, but approach each reading with a peaceful mindset and avoid becoming dependent on it.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">What does a reversed card mean?<span>&#x25BC;</span></div>
+    <div class="faq-a">A reversed card represents blocked energy, an internal state, or an invitation to understand the card from the opposite perspective. It does not necessarily carry a negative meaning &mdash; it often reminds you to pay attention to a side you have been ignoring. It may also indicate an energy that is dormant or in need of integration.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Which deck should I use?<span>&#x25BC;</span></div>
+    <div class="faq-a">This app uses the classic Rider-Waite Tarot, the most widely known and studied deck. Once you become familiar with it, you may explore other decks that suit your personal style. Different decks have different artistic styles, but their core meanings remain consistent.</div>
+  </div>
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">What do I need to prepare for a reading?<span>&#x25BC;</span></div>
+    <div class="faq-a">The most important thing is a calm mind. Find a quiet space, hold your question clearly in your thoughts, and trust your intuition. No special tools or rituals are required &mdash; tarot is simply a tool to help you connect with your inner wisdom.</div>
+  </div>
+</div>
+
+<!-- Records Page -->
+<div id="page-records" class="page">
+  <h2>My Records</h2>
+  <div style="text-align:center;margin-bottom:16px;">
+    <button class="btn-secondary" onclick="clearRecords()" style="color:#e88;">Clear All Records</button>
+  </div>
+  <div id="records-list"></div>
+  <div id="records-empty" class="empty-msg">No readings saved yet. Go draw some cards!</div>
+</div>
+
+<!-- Card Detail Modal -->
+<div id="modal-card" class="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal(event, true)">&times;</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Theme Modal -->
+<div id="modal-theme" class="modal-overlay" onclick="closeThemeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeThemeModal(event, true)">&times;</button>
+    <h3 style="color:var(--gold);margin-bottom:16px;">Choose Theme</h3>
+    <div class="theme-options" id="theme-options"></div>
+  </div>
+</div>
+
+<script>
+// ============ Tarot Card Data ============
+const MAJOR = [
+  {id:0,name:"The Fool",emoji:"\u{1f0cf}",suit:"major",suitLabel:"Major Arcana",core:"New beginnings, infinite possibility",upright:"You stand at the threshold of a brand new journey, filled with curiosity and optimism. Embrace the adventure.",reversed:"Recklessness, ignoring risks, acting without a plan."},
+  {id:1,name:"The Magician",emoji:"\u{1f3a9}",suit:"major",suitLabel:"Major Arcana",core:"Willpower, initiative, creation",upright:"You possess the creativity and resources to manifest your ideas into reality. Your talents are fully available.",reversed:"Manipulation, misuse of skills, or deceptive behavior."},
+  {id:2,name:"The High Priestess",emoji:"\u{1f319}",suit:"major",suitLabel:"Major Arcana",core:"Intuition, inner wisdom",upright:"Listen to your inner voice. Maintain a sense of mystery and trust your intuition.",reversed:"Suppressed intuition, ignoring your inner voice, confused by appearances."},
+  {id:3,name:"The Empress",emoji:"\u{1f338}",suit:"major",suitLabel:"Major Arcana",core:"Abundance, creativity, nurturing",upright:"Abundance flourishes. Creative energy is at its peak. Feel nourished by the richness of life.",reversed:"Over-protectiveness, creative blocks, or low self-worth."},
+  {id:4,name:"The Emperor",emoji:"\u{1f451}",suit:"major",suitLabel:"Major Arcana",core:"Authority, structure, stability",upright:"Establish order, take control of the situation, and build a solid foundation of authority.",reversed:"Over-control, rigidity, or being too domineering toward others."},
+  {id:5,name:"The Hierophant",emoji:"\u2695\ufe0f",suit:"major",suitLabel:"Major Arcana",core:"Tradition, faith, spiritual guidance",upright:"Follow tradition and belief. Receive spiritual guidance and mentorship.",reversed:"Questioning authority, breaking with tradition, or rigid dogma draining your spirit."},
+  {id:6,name:"The Lovers",emoji:"\u{1f491}",suit:"major",suitLabel:"Major Arcana",core:"Love, choice, values",upright:"A deep romantic connection or important relationship. Facing a significant choice.",reversed:"Relationship discord, conflicting values, or indecision about feelings."},
+  {id:7,name:"The Chariot",emoji:"\u{1f3c6}",suit:"major",suitLabel:"Major Arcana",core:"Victory, willpower, self-control",upright:"Harness your willpower and determination to overcome obstacles and achieve victory.",reversed:"Loss of control, impulsive actions, or stumbling at the moment of triumph."},
+  {id:8,name:"Strength",emoji:"\u{1f981}",suit:"major",suitLabel:"Major Arcana",core:"Inner strength, courage, patience",upright:"Tame your primal inner forces with gentleness and steadfast endurance.",reversed:"Self-doubt, driven by fear, unable to channel your power."},
+  {id:9,name:"The Hermit",emoji:"\u{1f526}",suit:"major",suitLabel:"Major Arcana",core:"Introspection, solitude, seeking truth",upright:"Withdraw and reflect. Step back from the noise to find clarity.",reversed:"Excessive isolation, avoiding others, or refusing guidance."},
+  {id:10,name:"Wheel of Fortune",emoji:"\u2728",suit:"major",suitLabel:"Major Arcana",core:"Destiny, cycles, change",upright:"The wheel of fate is turning. A turning point is arriving. Go with the flow.",reversed:"Bad luck, resisting change, or caught in a negative cycle."},
+  {id:11,name:"Justice",emoji:"\u2696\ufe0f",suit:"major",suitLabel:"Major Arcana",core:"Fairness, truth, cause and effect",upright:"Matters will be resolved fairly. Objective truth must be faced.",reversed:"Injustice, bias, avoiding responsibility."},
+  {id:12,name:"The Hanged Man",emoji:"\u{1f9d8}",suit:"major",suitLabel:"Major Arcana",core:"Pause, surrender, new perspective",upright:"Willingly pause and surrender. Shift your perspective to see the issue anew.",reversed:"Procrastination, unwillingness to surrender, missing a moment of insight."},
+  {id:13,name:"Death",emoji:"\u{1f480}",suit:"major",suitLabel:"Major Arcana",core:"Ending, transformation, rebirth",upright:"A relationship or phase is coming to an end, but transformation and renewal follow.",reversed:"Resisting change, unable to let go, clinging to the past."},
+  {id:14,name:"Temperance",emoji:"\u{1f3fa}",suit:"major",suitLabel:"Major Arcana",core:"Balance, patience, integration",upright:"Maintain balance and moderation. Be patient. Harmoniously blend opposing elements.",reversed:"Excess, loss of balance, or forcing outcomes."},
+  {id:15,name:"The Devil",emoji:"\u{1f608}",suit:"major",suitLabel:"Major Arcana",core:"Bondage, obsession, materialism",upright:"Bound by material desires or obsessions. Examine the shadow side of your inner world.",reversed:"Recognizing and breaking free from chains. Releasing obsession."},
+  {id:16,name:"The Tower",emoji:"\u26a1",suit:"major",suitLabel:"Major Arcana",core:"Upheaval, collapse, rebuilding",upright:"Sudden change and collapse. Old structures shatter. Painful but illuminating.",reversed:"Narrowly avoiding disaster, but change is still unavoidable. Or an internal collapse."},
+  {id:17,name:"The Star",emoji:"\u2b50",suit:"major",suitLabel:"Major Arcana",core:"Hope, inspiration, healing",upright:"Full of hope and inspiration. A period of healing. Believe in a brighter future.",reversed:"Despair about the future, creative drought, difficulty restoring confidence."},
+  {id:18,name:"The Moon",emoji:"\u{1f315}",suit:"major",suitLabel:"Major Arcana",core:"Illusion, confusion, the unconscious",upright:"Situation is unclear. Influenced by illusion or the unconscious. Face your inner fears.",reversed:"The fog is slowly lifting. Fear receding. Truth is about to come to light."},
+  {id:19,name:"The Sun",emoji:"\u2600\ufe0f",suit:"major",suitLabel:"Major Arcana",core:"Joy, success, vitality",upright:"Full of vitality and happiness. Things are progressing well. Success and radiance ahead.",reversed:"Slightly clouded. Over-optimism, or joy momentarily obscured."},
+  {id:20,name:"Judgement",emoji:"\u{1f4e2}",suit:"major",suitLabel:"Major Arcana",core:"Awakening, evaluation, calling",upright:"An inner awakening and self-review. Answer the call within. Complete transformation and rebirth.",reversed:"Excessive self-judgment, ignoring the inner calling, missing the moment of awakening."},
+  {id:21,name:"The World",emoji:"\u{1f30d}",suit:"major",suitLabel:"Major Arcana",core:"Completion, wholeness, achievement",upright:"A cycle is complete. Goals are achieved. Feel the holistic joy and fulfillment of accomplishment.",reversed:"Not yet complete, delays, or lacking recognition of achievement."}
+];
+
+// Minor Arcana generation
+const SUITS = ['wands','cups','swords','pentacles'];
+const SUIT_NAMES = ['Wands','Cups','Swords','Pentacles'];
+const SUIT_EMOJIS = ['\u{1f525}','\u{1f4a7}','\u2694\ufe0f','\u{1fa99}'];
+const COURTS = ['Page','Knight','Queen','King'];
+const NUMBERS = ['A','2','3','4','5','6','7','8','9','10'];
+
+function buildMinor(){
+  const cards = [];
+  for(let s=0;s<4;s++){
+    for(let i=0;i<14;i++){
+      let name, core, upright, reversed;
+      if(i<10){
+        name = NUMBERS[i] + ' of ' + SUIT_NAMES[s];
+        core = SUIT_NAMES[s] + ' — Numbered Card';
+        upright = 'Upright: The energy of ' + SUIT_NAMES[s] + ' flows freely. Pay attention to your current state.';
+        reversed = 'Reversed: Energy is blocked. Reflection and adjustment are needed.';
+      } else {
+        const ci = i-10;
+        name = COURTS[ci] + ' of ' + SUIT_NAMES[s];
+        core = COURTS[ci] + ' — ' + SUIT_NAMES[s] + ' qualities';
+        upright = 'The ' + COURTS[ci] + ' embodies the positive qualities of ' + SUIT_NAMES[s] + '.';
+        reversed = 'The ' + COURTS[ci] + '\'s energy is blocked or over-expressed.';
+      }
+      cards.push({
+        id: 22+s*14+i,
+        name: name,
+        emoji: SUIT_EMOJIS[s],
+        suit: SUITS[s],
+        suitLabel: SUIT_NAMES[s],
+        core: core,
+        upright: upright,
+        reversed: reversed
+      });
+    }
+  }
+  return cards;
+}
+
+const ALL_CARDS = [...MAJOR, ...buildMinor()];
+let currentSpread = 'single';
+let currentCards = [];
+let records = JSON.parse(localStorage.getItem('tarot_records_en') || '[]');
+
+// ============ Navigation ============
+function showPage(page, el){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  if(el) {
+    el.classList.add('active');
+  } else {
+    const map = {'divination':0,'library':1,'tutorial':2,'faq':3,'records':4};
+    const idx = map[page];
+    if(idx !== undefined) document.querySelectorAll('.nav-link')[idx].classList.add('active');
+  }
+  if(page==='library') renderLibrary('all','');
+  if(page==='records') loadRecords();
+  if(page==='tutorial') showTutorial(0);
+}
+
+// ============ Spread Selection ============
+function selectSpread(type, el){
+  currentSpread = type;
+  document.querySelectorAll('.spread-option').forEach(opt => opt.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+
+// ============ Draw Logic ============
+function shuffleDeck(){
+  const arr = [...ALL_CARDS];
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function drawCards(){
+  const deck = shuffleDeck();
+  let count = 1;
+  if(currentSpread==='three') count=3;
+  if(currentSpread==='five') count=5;
+  if(currentSpread==='celtic') count=10;
+
+  currentCards = [];
+  for(let i=0;i<count;i++){
+    const card = Object.assign({}, deck[i]);
+    card.isReversed = Math.random()<0.35;
+    currentCards.push(card);
+  }
+
+  renderCards();
+  var ra = document.getElementById('result-actions');
+  ra.style.display = 'flex';
+  ra.style.justifyContent = 'center';
+  ra.style.gap = '12px';
+}
+
+function renderCards(){
+  const container = document.getElementById('card-display');
+  container.innerHTML = '';
+  currentCards.forEach(function(card){
+    const div = document.createElement('div');
+    div.className = 'deck-card revealed';
+    div.style.cursor = 'pointer';
+    div.onclick = function(){ showCardModal(card); };
+    const dir = card.isReversed ? 'Reversed' : 'Upright';
+    div.innerHTML =
+      '<div style="font-size:36px;">' + card.emoji + '</div>' +
+      '<div style="color:var(--gold-light);font-size:13px;margin:4px 0;">' + card.name + '</div>' +
+      '<div style="color:var(--text-muted);font-size:11px;">' + dir + '</div>';
+    container.appendChild(div);
+  });
+}
+
+// ============ Card Modal ============
+function showCardModal(card){
+  const dir = card.isReversed ? 'Reversed' : 'Upright';
+  const meaning = card.isReversed ? card.reversed : card.upright;
+  const html =
+    '<div style="text-align:center;">' +
+      '<div style="font-size:64px;margin-bottom:12px;">' + card.emoji + '</div>' +
+      '<h3 style="color:var(--gold);font-size:20px;">' + card.name + ' (' + dir + ')</h3>' +
+      '<p style="color:var(--gold-dim);font-size:13px;margin:4px 0;">' + card.suitLabel + '</p>' +
+    '</div>' +
+    '<div style="margin:16px 0;">' +
+      '<h4 style="color:var(--gold-light);font-size:14px;">Core Meaning</h4>' +
+      '<p style="color:var(--text-secondary);font-size:14px;line-height:1.7;">' + card.core + '</p>' +
+    '</div>' +
+    '<div style="margin:16px 0;">' +
+      '<h4 style="color:var(--gold-light);font-size:14px;">' + dir + ' Interpretation</h4>' +
+      '<p style="color:var(--text-secondary);font-size:14px;line-height:1.7;">' + meaning + '</p>' +
+    '</div>' +
+    '<div style="margin-top:16px;">' +
+      '<span style="background:rgba(201,168,76,0.15);color:var(--gold);padding:3px 10px;border-radius:12px;font-size:12px;margin:2px;display:inline-block;">' + card.suitLabel + '</span>' +
+    '</div>';
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-card').classList.add('active');
+}
+
+function closeModal(evt, force){
+  if(force || evt.target.classList.contains('modal-overlay') || evt.target.classList.contains('modal-close')){
+    document.getElementById('modal-card').classList.remove('active');
+  }
+}
+
+// ============ Library Page ============
+function renderLibrary(suitFilter, search){
+  const grid = document.getElementById('library-grid');
+  grid.innerHTML = '';
+  let cards = ALL_CARDS;
+  if(suitFilter && suitFilter !== 'all'){
+    cards = cards.filter(function(c){ return c.suit === suitFilter; });
+  }
+  if(search){
+    const kw = search.toLowerCase();
+    cards = cards.filter(function(c){
+      return c.name.toLowerCase().includes(kw) || c.core.toLowerCase().includes(kw);
+    });
+  }
+  if(cards.length === 0){
+    grid.innerHTML = '<div class="empty-msg">No matching cards found.</div>';
+    return;
+  }
+  cards.forEach(function(card){
+    const div = document.createElement('div');
+    div.className = 'card-item';
+    div.onclick = function(){ showCardModal(card); };
+    div.innerHTML =
+      '<span class="emoji">' + card.emoji + '</span>' +
+      '<div>' + card.name + '</div>' +
+      '<div style="color:var(--text-muted);font-size:11px;">' + card.suitLabel + '</div>';
+    grid.appendChild(div);
+  });
+}
+
+function filterCards(val){
+  const activeBtn = document.querySelector('.lib-filter-btn.active');
+  const suit = activeBtn ? (activeBtn.getAttribute('data-suit') || 'all') : 'all';
+  renderLibrary(suit, val);
+}
+
+function filterBySuit(suit){
+  document.querySelectorAll('.lib-filter-btn').forEach(function(b){
+    b.classList.remove('active');
+    if(b.getAttribute('data-suit') === suit) b.classList.add('active');
+  });
+  renderLibrary(suit, document.querySelector('.lib-search').value);
+}
+
+// ============ Tutorial Page ============
+const TUTORIALS = [
+  {
+    title:'What is Tarot?',
+    content:'Tarot is a 78-card divination tool that originated in 15th-century Europe. The 78 cards are divided into:<br><br><b>Major Arcana (22 cards)</b>: Represent the significant themes and spiritual journey of life, from "The Fool" to "The World".<br><br><b>Minor Arcana (56 cards)</b>: Divided into four suits — Wands, Cups, Swords, and Pentacles — representing the everyday situations of life.<br><br>Tarot is not a tool for fortune-telling; it is a mirror that helps you connect with your inner intuition.'
+  },
+  {
+    title:'How to Read?',
+    content:'Basic steps:<br><br><b>1. Prepare your mind</b>: Find a quiet, comfortable environment.<br><b>2. Ask your question</b>: Clearly hold in your mind the question you wish to explore.<br><b>3. Choose a spread</b>: Select a spread suited to the complexity of your question.<br><b>4. Shuffle and draw</b>: Trust your intuition as you draw the cards.<br><b>5. Interpret</b>: Combine the position of each card (upright or reversed) with your inner feelings for a holistic reading.'
+  },
+  {
+    title:'Card Interpretation Tips',
+    content:'Key points for interpretation:<br><br><b>Observe the imagery</b>: The artwork itself offers many clues and symbols.<br><b>Trust your intuition</b>: What is your immediate feeling when you first see the card?<br><b>Consider position</b>: The same card can carry different meanings depending on its position in the spread.<br><b>Read holistically</b>: Do not interpret each card in isolation — read the entire spread as a coherent whole.'
+  },
+  {
+    title:'Upright &amp; Reversed',
+    content:'<b>Upright</b>: The card faces right-side up, indicating that its energy is expressing itself in a healthy, direct way.<br><br><b>Reversed</b>: The card is inverted. There are several possible interpretations:<br>&bull; The energy is blocked or cannot flow freely<br>&bull; The energy is too intense and needs to be balanced<br>&bull; The card should be understood from the opposite angle<br>&bull; An internal state not yet manifesting in the outer world<br><br>Reversed cards are not always "bad." They often invite you to pay attention to a side of the situation you have been overlooking.'
+  }
+];
+
+function showTutorial(idx){
+  document.querySelectorAll('.tutorial-tab').forEach(function(t,i){
+    t.classList.toggle('active', i===idx);
+  });
+  document.getElementById('tutorial-content').innerHTML =
+    '<h3 style="color:var(--gold);">' + TUTORIALS[idx].title + '</h3>' +
+    '<div style="margin-top:12px;">' + TUTORIALS[idx].content + '</div>';
+}
+
+// ============ FAQ ============
+function toggleFaq(qEl){
+  const item = qEl.parentElement;
+  item.classList.toggle('open');
+  const span = qEl.querySelector('span');
+  if(span) span.textContent = item.classList.contains('open') ? '\u25bc' : '\u25b6';
+}
+
+// ============ Records ============
+function saveRecord(){
+  if(currentCards.length===0) return;
+  const spreadNames = {'single':'Single Card','three':'Three Card','five':'Five Card','celtic':'Celtic Cross'};
+  const record = {
+    date: new Date().toLocaleString('en-US'),
+    spread: currentSpread,
+    spreadName: spreadNames[currentSpread] || currentSpread,
+    cards: currentCards.map(function(c){
+      return {name:c.name, emoji:c.emoji, dir: c.isReversed ? 'Reversed' : 'Upright'};
+    })
+  };
+  records.unshift(record);
+  if(records.length>50) records = records.slice(0,50);
+  localStorage.setItem('tarot_records_en', JSON.stringify(records));
+  alert('Record saved!');
+  loadRecords();
+}
+
+function loadRecords(){
+  const list = document.getElementById('records-list');
+  const empty = document.getElementById('records-empty');
+  if(records.length===0){
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  var html = '';
+  records.forEach(function(r){
+    var cardsHtml = '';
+    r.cards.forEach(function(c){
+      cardsHtml +=
+        '<div class="result-card">' +
+          '<div style="font-size:24px;">' + (c.emoji||'') + '</div>' +
+          '<div style="color:var(--gold-light);font-size:12px;">' + c.name + '</div>' +
+          '<div style="color:var(--text-muted);font-size:11px;">' + c.dir + '</div>' +
+        '</div>';
+    });
+    html +=
+      '<div class="record-item">' +
+        '<div class="record-date">' + r.date + '</div>' +
+        '<div class="record-spread">Spread: ' + (r.spreadName||r.spread) + '</div>' +
+        '<div class="record-cards">' + cardsHtml + '</div>' +
+      '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function clearRecords(){
+  if(!confirm('Are you sure you want to clear all reading records?')) return;
+  records = [];
+  localStorage.removeItem('tarot_records_en');
+  loadRecords();
+}
+
+// ============ Themes ============
+const THEMES = [
+  {id:'gold', name:'Dark Gold Classic', bg:'linear-gradient(135deg,#0a0618 0%,#12082a 40%,#0d1535 70%,#080c20 100%)', nav:'rgba(10,6,24,0.92)'},
+  {id:'purple', name:'Purple Lavender', bg:'linear-gradient(135deg,#1a0a2e 0%,#2d1b5e 40%,#3d2b6e 70%,#12082a 100%)', nav:'rgba(26,10,46,0.92)'},
+  {id:'dark', name:'Deep Sea Silence', bg:'linear-gradient(135deg,#020a18 0%,#0a2035 40%,#102a45 70%,#05101f 100%)', nav:'rgba(2,10,24,0.92)'},
+  {id:'forest', name:'Mystic Forest', bg:'linear-gradient(135deg,#0a1a0a 0%,#1a3a2a 40%,#2a4a3a 70%,#051505 100%)', nav:'rgba(10,26,10,0.92)'},
+  {id:'ocean', name:'Starlit Ocean', bg:'linear-gradient(135deg,#0a0a20 0%,#15153a 40%,#20205a 70%,#0a0a15 100%)', nav:'rgba(10,10,32,0.92)'},
+  {id:'rose', name:'Rose Romance', bg:'linear-gradient(135deg,#1a0a18 0%,#3a1a2e 40%,#4a2a3e 70%,#150a12 100%)', nav:'rgba(26,10,24,0.92)'}
+];
+
+function renderThemes(){
+  const c = document.getElementById('theme-options');
+  c.innerHTML = '';
+  THEMES.forEach(function(t){
+    const opt = document.createElement('div');
+    opt.className = 'theme-option';
+    opt.title = t.name;
+    opt.style.background = t.bg;
+    opt.onclick = function(){ setTheme(t.id); };
+    c.appendChild(opt);
+  });
+}
+
+function setTheme(id){
+  const theme = THEMES.find(function(t){ return t.id===id; });
+  if(!theme) return;
+  document.body.style.background = theme.bg;
+  document.querySelector('nav').style.background = theme.nav;
+  document.querySelectorAll('.theme-option').forEach(function(o){ o.classList.remove('active'); });
+}
+
+function openThemeModal(){ document.getElementById('modal-theme').classList.add('active'); }
+
+function closeThemeModal(evt, force){
+  if(force || evt.target.classList.contains('modal-overlay') || evt.target.classList.contains('modal-close')){
+    document.getElementById('modal-theme').classList.remove('active');
+  }
+}
+
+// ============ Share ============
+function shareResult(){
+  if(currentCards.length===0) return;
+  var lines = currentCards.map(function(c){
+    return '[' + (c.isReversed ? 'Rev' : 'Upr') + '] ' + c.name + ': ' + (c.isReversed ? c.reversed : c.upright).substring(0,50) + '...';
+  }).join('\n');
+  var text = '[Tarot Oracle - Daily Divination]\n' + lines + '\n\u2014 Try your reading today!';
+  if(navigator.share){
+    navigator.share({title:'My Tarot Reading', text: text});
+  } else {
+    navigator.clipboard.writeText(text)
+      .then(function(){ alert('Result copied to clipboard!'); })
+      .catch(function(){ alert('Share failed. Please copy the result manually.'); });
+  }
+}
+
+function resetDraw(){
+  currentCards = [];
+  document.getElementById('card-display').innerHTML = '';
+  document.getElementById('result-actions').style.display = 'none';
+}
+
+// ============ Init ============
+document.addEventListener('DOMContentLoaded', function(){
+  renderThemes();
+  showTutorial(0);
+  loadRecords();
+});
+</script>
+</body>
+</html>
