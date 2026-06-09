@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
-    /* 内联样式确保主题色立即生效，避免闪烁 */
     html, body {
       margin: 0;
       padding: 0;
@@ -25,25 +24,20 @@
     }
   </style>
 
+  <!-- ===== Adsterra Popunder（官方推荐位置）===== -->
+  <script src="https://pl29586904.effectivecpmnetwork.com/89/8c/4f/898c4f18cae7c394971a643ef9e989c8.js"></script>
+
   <script>
-    // 在 React 加载前立即设置主题，避免闪烁
     (function() {
       const isInIframe = window.self !== window.top;
-
       function applyThemeToDOM(theme) {
-        document.documentElement.classList.remove('light', 'dark');
+        document.documentElement.classList.remove('light','dark');
         document.documentElement.classList.add(theme);
         document.documentElement.setAttribute('data-theme', theme);
       }
-
       if (isInIframe) {
-        window.addEventListener('message', function(event) {
-          if (event.data && typeof event.data.theme === 'string') {
-            const theme = event.data.theme;
-            if (theme === 'light' || theme === 'dark') {
-              applyThemeToDOM(theme);
-            }
-          }
+        window.addEventListener('message', function(e){
+          if(e.data && (e.data.theme==='light'||e.data.theme==='dark')) applyThemeToDOM(e.data.theme);
         });
       } else {
         applyThemeToDOM('light');
@@ -55,9 +49,8 @@
 <body>
   <div id="root"></div>
 
-  <!-- ===== Adsterra Social Bar START ===== -->
+  <!-- ===== Adsterra Social Bar ===== -->
   <script src="https://pl29586905.effectivecpmnetwork.com/9f/2a/8b/9f2a8b0b27d66708b30f289e26ee2248.js"></script>
-  <!-- ===== Adsterra Social Bar END ===== -->
 
   <script defer="defer" src="bundle.js"></script>
 </body>
